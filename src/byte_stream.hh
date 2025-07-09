@@ -25,11 +25,10 @@ protected:
   // Please add any additional state to the ByteStream here, and not to the Writer and Reader interfaces.
   uint64_t capacity_; // Capacity of stream_
   bool error_ {};
-  bool closed_ {}; // Whether the stream is closed.
-  uint64_t have_pushed_; // Bytes cumulatively pushed to the stream.
-  uint64_t have_popped_; // Bytes cumulatively popped from the stream.
-  std::string stream_{}; // The real stream or reading and writing.
-  
+  bool closed_ {};        // Whether the stream is closed.
+  uint64_t have_pushed_;  // Bytes cumulatively pushed to the stream.
+  uint64_t have_popped_;  // Bytes cumulatively popped from the stream.
+  std::string stream_ {}; // The real stream or reading and writing.
 };
 
 class Writer : public ByteStream

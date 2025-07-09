@@ -9,24 +9,24 @@ using namespace std;
 
 void get_URL( const string& host, const string& path )
 {
-        TCPSocket socket;
-    Address server_address(host, "http");
-    socket.connect(server_address);
+  TCPSocket socket;
+  Address server_address( host, "http" );
+  socket.connect( server_address );
 
-    std::string request = "GET " + path + " HTTP/1.1\r\n";
-    request += "Host: " + host + "\r\n";
-    request += "Connection: close\r\n";
-    request += "\r\n";
-    socket.write(request);
+  std::string request = "GET " + path + " HTTP/1.1\r\n";
+  request += "Host: " + host + "\r\n";
+  request += "Connection: close\r\n";
+  request += "\r\n";
+  socket.write( request );
 
-   while (true) {
+  while ( true ) {
     std::string buffer;
-    socket.read(buffer);
-    if (socket.eof()) break;  // EOF reached
+    socket.read( buffer );
+    if ( socket.eof() )
+      break; // EOF reached
     std::cout << buffer;
   }
-    socket.close();
-
+  socket.close();
 }
 
 int main( int argc, char* argv[] )
