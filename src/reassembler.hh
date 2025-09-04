@@ -57,8 +57,11 @@ public:
   // Return available capacity of output_
   uint64_t available_capacity() { return output_.writer().available_capacity(); }
 
-  // Push all data can be assembled in buffer after inserting
+  // Push all data can be assembled in buffer after insert
   void drain ();
+
+  // Hold invariant in internal_buffer_ after insert
+  void normalize_buffer ();
 
   
 private:

@@ -7,7 +7,8 @@ void Reassembler::insert(uint64_t first_index, std::string data, bool is_last_su
     uint64_t window_left  = first_unassembled_index();
     uint64_t window_right = window_left + available_capacity();
 
-    if (is_last_substring) {
+    // Meet the last interval, record eof_index_ in first time and ignore later
+    if (is_last_substring && !have_eof_) {
         eof_index_ = first_index + data.size();
         have_eof_  = true;
     }
@@ -22,13 +23,15 @@ void Reassembler::insert(uint64_t first_index, std::string data, bool is_last_su
 
         if (clip_left == window_left) {
             output_.writer().push(slice);
-            drain();
+
         } else {
             buffer_it(clip_left, std::move(slice));
         }
     }
 
-    // 2. 检查是否已经接收完所有数据
+    normalize_buffer();            
+    drain();
+    //  Received all data
     if (have_eof_ && first_unassembled_index() == eof_index_) {
         output_.writer().close();
     }
@@ -105,6 +108,56 @@ void Reassembler::buffer_it(uint64_t index, string data) {
   }
   
 }
+
+// void Reassembler::normalize_buffer() {
+//   if(internal_buffer_.empty()) return;
+
+//   uint64_t wanted = first_unassembled_index();
+//   auto greater_equal = internal_buffer_.lower_bound(wanted);
+//   auto less = prev(greater_equal);
+ 
+//   while(less != internal_buffer_.begin()) {
+//     auto it = less;
+//     less = prev(it);
+//     bool part_overlap = (it->first + it->second.size()) > wanted;
+
+//     if(part_overlap) {
+//       uint64_t new_index  = wanted;
+//       string tail = it->second.substr(new_index - it->first);
+//       internal_buffer_.erase(it);
+//       internal_buffer_.emplace(new_index, tail);
+//     } else {
+//       internal_buffer_.erase(it);
+//     }
+//   }
+
+// }
+
+void Reassembler::normalize_buffer() {
+  if (internal_buffer_.empty()) return;
+
+  const uint64_t wanted = first_unassembled_index();
+  auto it = internal_buffer_.begin();
+
+ 
+  while (it != internal_buffer_.end() && it->first < wanted) {
+    const uint64_t start = it->first;
+    const std::string &s = it->second;
+    const uint64_t end = start + s.size();
+
+    if (end <= wanted) {
+      it = internal_buffer_.erase(it);
+    } else {
+      const size_t off = static_cast<size_t>(wanted - start);
+      std::string tail = s.substr(off);
+      it = internal_buffer_.erase(it);
+      internal_buffer_.emplace(wanted, std::move(tail));
+      break;
+    }
+  }
+}
+
+
 
 // How many bytes are stored in the Reassembler itself?
 // This function is for testing only; don't add extra state to support it.
