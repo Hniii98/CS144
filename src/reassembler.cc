@@ -4,37 +4,39 @@
 using namespace std;
 
 void Reassembler::insert(uint64_t first_index, std::string data, bool is_last_substring) {
-    uint64_t window_left  = first_unassembled_index();
-    uint64_t window_right = window_left + available_capacity();
+  uint64_t window_left  = first_unassembled_index();
+  uint64_t window_right = window_left + available_capacity();
 
-    // Meet the last interval, record eof_index_ in first time and ignore later
-    if (is_last_substring && !have_eof_) {
-        eof_index_ = first_index + data.size();
-        have_eof_  = true;
-    }
+  // Meet the last interval, record eof_index_ in first time and ignore later
+  if (is_last_substring && !have_eof_) {
+      eof_index_ = first_index + data.size();
+      have_eof_  = true;
+  }
 
-    uint64_t clip_left  = std::max(first_index, window_left);
-    uint64_t clip_right = std::min(first_index + data.size(), window_right);
+  uint64_t clip_left  = std::max(first_index, window_left);
+  uint64_t clip_right = std::min(first_index + data.size(), window_right);
 
-    if (clip_left < clip_right) {
-        uint64_t pos = clip_left - first_index;
-        uint64_t len = clip_right - clip_left;
-        std::string slice = data.substr(pos, len);
+  if (clip_left < clip_right) { // overlap exist in writing window
+      uint64_t pos = clip_left - first_index;
+      uint64_t len = clip_right - clip_left;
+      std::string slice = data.substr(pos, len);
 
-        if (clip_left == window_left) {
-            output_.writer().push(slice);
+      if (clip_left == window_left) {
+          output_.writer().push(slice);
+          normalize_buffer();  // normalize buffer          
+          drain(); // drain from buffer
 
-        } else {
-            buffer_it(clip_left, std::move(slice));
-        }
-    }
+      } else {
+          buffer_it(clip_left, std::move(slice));
+      }
+  }
 
-    normalize_buffer();            
-    drain();
-    //  Received all data
-    if (have_eof_ && first_unassembled_index() == eof_index_) {
-        output_.writer().close();
-    }
+  
+
+  //  Check if received all data
+  if (have_eof_ && first_unassembled_index() == eof_index_) {
+      output_.writer().close();
+  }
 }
 
 
@@ -72,66 +74,48 @@ void Reassembler::drain() {
   }  
 }
 
+void Reassembler::buffer_it(uint64_t index, std::string data) {
+  if (data.empty()) return;
 
-void Reassembler::buffer_it(uint64_t index, string data) {
-  if(internal_buffer_.empty()) { // First time buffer, insert directly
-    internal_buffer_.emplace(index, data);
-    return;
+  uint64_t L = index;
+  uint64_t R = index + data.size();      
+
+  // Make sure when it->first < L must handled (it's first index less than index, but it may reach to overlap data)
+  auto it = internal_buffer_.upper_bound(L);
+  if (it != internal_buffer_.begin()) --it;
+
+  while (it != internal_buffer_.end()) {
+    uint64_t s = it->first;
+    uint64_t e = s + it->second.size();
+
+    if (e < L) {  // Previous one are no overlap, skip. otherwise go to handle left and right slice
+      ++it;
+      continue;
+    }
+
+    if (s > R) { // all overlap handled over, break loop      
+      break;
+    }
+
+    // Every buffered interval, we consider it's front and tail.
+    // So we don't have to clarify it to many situation.
+
+    if (s < L) { // prefix
+      data = it->second.substr(0, L - s) + data;
+      L = s;
+    }
+    if (e > R) { // suffix
+      data += it->second.substr(R - s);
+      R = e;
+    }
+
+    // remove old pair
+    it = internal_buffer_.erase(it);
   }
 
-  // At least one pair in internal_buffer_
-  auto greater_equal = internal_buffer_.lower_bound(index); 
-  auto less = prev(greater_equal);
-
-
-  // Calculate interval not overlap
-  uint64_t clip_left = (less == internal_buffer_.begin()) ?
-                        index :
-                        max(less->first + less->second.size() - 1, index);
-  
-  uint64_t clip_right = (greater_equal == internal_buffer_.end()) ?
-                        index + data.size() :
-                        min(index + data.size(), greater_equal->first);
-
-  string slice = data.substr(clip_left - index, clip_right - clip_left + 1);
-
-
-  // Check if can apeend to less node
-  bool append_to_left = (less != internal_buffer_.begin()) &&
-                        ((less->first + less->second.size()) >= index);
-
-
-  if(append_to_left) {
-    less->second.append(slice);
-  } else {
-    internal_buffer_.emplace(index, slice);
-  }
-  
+  internal_buffer_.emplace(L, std::move(data));
 }
 
-// void Reassembler::normalize_buffer() {
-//   if(internal_buffer_.empty()) return;
-
-//   uint64_t wanted = first_unassembled_index();
-//   auto greater_equal = internal_buffer_.lower_bound(wanted);
-//   auto less = prev(greater_equal);
- 
-//   while(less != internal_buffer_.begin()) {
-//     auto it = less;
-//     less = prev(it);
-//     bool part_overlap = (it->first + it->second.size()) > wanted;
-
-//     if(part_overlap) {
-//       uint64_t new_index  = wanted;
-//       string tail = it->second.substr(new_index - it->first);
-//       internal_buffer_.erase(it);
-//       internal_buffer_.emplace(new_index, tail);
-//     } else {
-//       internal_buffer_.erase(it);
-//     }
-//   }
-
-// }
 
 void Reassembler::normalize_buffer() {
   if (internal_buffer_.empty()) return;
