@@ -3,38 +3,37 @@
 
 using namespace std;
 
-void Reassembler::insert( uint64_t first_index, string data, bool is_last_substring ){
-  uint64_t window_left = first_unassembled_index();
-  uint64_t window_right = window_left + available_capacity();
-  uint64_t clip_left = max(first_index, window_left);
-  uint64_t clip_right = min(first_index + data.size(), window_right);
-  
+void Reassembler::insert(uint64_t first_index, std::string data, bool is_last_substring) {
+    uint64_t window_left  = first_unassembled_index();
+    uint64_t window_right = window_left + available_capacity();
 
-  // no overlap slice exist, drop datagram
-  if(clip_left >= clip_right) return; 
-  
-  // record eof index
-  if(is_last_substring) {
-    eof_index_ = first_index + data.size();
-    have_eof_ = true;
-  }
+    if (is_last_substring) {
+        eof_index_ = first_index + data.size();
+        have_eof_  = true;
+    }
 
-  uint64_t pos = clip_left - first_index;
-  uint64_t len = clip_right - clip_left;
-  auto slice = data.substr(pos, len);
+    uint64_t clip_left  = std::max(first_index, window_left);
+    uint64_t clip_right = std::min(first_index + data.size(), window_right);
 
-  if(clip_left == window_left) { // no gap, write directly
-    output_.writer().push(slice);
-    drain();
-  } 
-  else if(clip_left > window_left) { // gap exist, buffer slice
-    buffer_it(clip_left, slice);
-  }
+    if (clip_left < clip_right) {
+        uint64_t pos = clip_left - first_index;
+        uint64_t len = clip_right - clip_left;
+        std::string slice = data.substr(pos, len);
 
-  // Check if receive all data
- if(have_eof_ && first_unassembled_index() == eof_index_) output_.writer().close();
- 
+        if (clip_left == window_left) {
+            output_.writer().push(slice);
+            drain();
+        } else {
+            buffer_it(clip_left, std::move(slice));
+        }
+    }
+
+    // 2. 检查是否已经接收完所有数据
+    if (have_eof_ && first_unassembled_index() == eof_index_) {
+        output_.writer().close();
+    }
 }
+
 
 void Reassembler::drain() {
   if(internal_buffer_.empty()) return; // buffer empty, return
