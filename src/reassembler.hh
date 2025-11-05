@@ -1,18 +1,15 @@
 #pragma once
 
 #include "byte_stream.hh"
-#include <vector>
 #include <map>
+#include <vector>
 
 class Reassembler
 {
 public:
   // Construct Reassembler to write into given ByteStream.
-  explicit Reassembler( ByteStream&& output ) 
-    : output_( std::move( output ) ), 
-    have_eof_( false ), 
-    eof_index_( 0 ),
-    internal_buffer_()
+  explicit Reassembler( ByteStream&& output )
+    : output_( std::move( output ) ), have_eof_( false ), eof_index_( 0 ), internal_buffer_()
   {}
 
   /*
@@ -49,24 +46,28 @@ public:
   const Writer& writer() const { return output_.writer(); }
 
   //  First unassembled byte, index start from 0
-  uint64_t first_unassembled_index() { return output_.reader().bytes_popped() + output_.reader().bytes_buffered(); }
+  uint64_t first_unassembled_index() const
+  {
+    return output_.reader().bytes_popped() + output_.reader().bytes_buffered();
+  }
 
-  // Buffer data slice when it meet gap to be filled in
-  void buffer_it ( uint64_t index, std::string data );
-  
   // Return available capacity of output_
   uint64_t available_capacity() { return output_.writer().available_capacity(); }
 
-  // Push all data can be assembled in buffer after insert
-  void drain ();
+  // Set output_ status to error
+  void set_error() { output_.set_error(); }
 
-  // Hold invariant in internal_buffer_ after insert
-  void normalize_buffer ();
-
-  
 private:
   ByteStream output_;
   bool have_eof_;
   uint64_t eof_index_;
-  std::map<uint64_t, std::string> internal_buffer_ ; // invariant: 1. no overlap 2. all index >= first_unassembled_index()
+  std::map<uint64_t, std::string>
+    internal_buffer_; // invariant: 1. no overlap 2. all index >= first_unassembled_index()
+
+  // Buffer data slice when it meet gap to be filled in
+  void buffer_it( uint64_t index, std::string data );
+  // Push all data can be assembled in buffer after insert
+  void drain();
+  // Hold invariant in internal_buffer_ after insert
+  void normalize_buffer();
 };
