@@ -16,6 +16,9 @@ void TCPReceiver::receive( TCPSenderMessage message )
   // Reject all fragments before isn will be set.
   if ( !isn_.has_value() )
     return;
+  // Bare ack message, don't need to insert.
+  if ( message.sequence_length() == 0 )
+    return;
 
   uint64_t checkpoint = reassembler_.first_unassembled_index();
   uint64_t absolute_seqno = message.seqno.unwrap( isn_.value(), checkpoint );
