@@ -96,7 +96,6 @@ private:
     EthernetAddress MAC;
     ms expired_at;
   };
-  // IP-to-Ethernet mapping alive time 
   static constexpr ms MAPPING_ALIVE = 30 * 1000; 
   std::unordered_map<Address, MACEntry, Address::Hash> cached_mapping_ {};
 
@@ -107,7 +106,7 @@ private:
   };
   std::unordered_map<Address, std::vector<DgramEntry>, Address::Hash> datagrams_waiting_mapping_ {};
 
-  // ARP frozen time in the same IP to avoid flood
+
   static constexpr ms ARP_SENDING_FROZEN = 5 * 1000; 
   // Record arp sending avaiable time spot 
   std::unordered_map<Address, ms, Address::Hash> arp_available_at_ {}; 
@@ -120,4 +119,5 @@ private:
 
   // Expire any IP-to-Ethernet mappings that have expired
   void clean_expired_mapping( ms now );
+  
 };

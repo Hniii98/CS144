@@ -1,4 +1,5 @@
 #include <iostream>
+#include <algorithm>  
 
 #include "arp_message.hh"
 #include "debug.hh"
@@ -49,7 +50,9 @@ void NetworkInterface::send_datagram( const InternetDatagram& dgram, const Addre
   else 
   {    
     // Queue the InternetDatagram to wait corresponing mapping.
-    datagrams_waiting_mapping_[next_hop].push_back(dgram);
+    datagrams_waiting_mapping_[next_hop].push_back(DgramEntry{
+                                                    .dgram = dgram, 
+                                                    .expired_at = since_constructed_ + ARP_SENDING_FROZEN});
     // This ip is not at ARP sending available time since since a sending in last 5 ms.
     auto pass = arp_available_at_.find(next_hop);
     if(pass != arp_available_at_.end() && 
@@ -127,6 +130,22 @@ void NetworkInterface::tick( const size_t ms_since_last_tick )
 
   // Clean expired mapping.
   clean_expired_mapping(since_constructed_);
+
+  for(auto it = datagrams_waiting_mapping_.begin(); it != datagrams_waiting_mapping_.end(); )
+  {
+      auto& dgrams_vec = it->second;
+      dgrams_vec.erase(remove_if(dgrams_vec.begin(), dgrams_vec.end(), 
+                                [this](const DgramEntry &dgram){ return dgram.expired_at <= since_constructed_; }),
+                      dgrams_vec.end());
+
+      if(dgrams_vec.empty())
+      {
+        it = datagrams_waiting_mapping_.erase(it);  
+      } else{
+        it++;
+      }
+
+  }
 }
 
 //! \param[in] now the number of milliseconds since the NetworkInterface was constructed
@@ -151,7 +170,7 @@ void NetworkInterface::send_waiting_dgrams( const Address& comming_ip)
   {
     for(auto& d : it->second)
     {
-      send_datagram(d, comming_ip);
+      send_datagram(d.dgram, comming_ip);
     }
     datagrams_waiting_mapping_.erase(it);
   }
