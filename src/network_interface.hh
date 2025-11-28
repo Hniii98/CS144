@@ -101,7 +101,11 @@ private:
   std::unordered_map<Address, MACEntry, Address::Hash> cached_mapping_ {};
 
   // Cache InternetDatagrams that are waiting for next hop's Ethernet address 
-  std::unordered_map<Address, std::vector<InternetDatagram>, Address::Hash> datagrams_waiting_mapping_ {};
+  struct DgramEntry{
+    InternetDatagram dgram;
+    ms expired_at;
+  };
+  std::unordered_map<Address, std::vector<DgramEntry>, Address::Hash> datagrams_waiting_mapping_ {};
 
   // ARP frozen time in the same IP to avoid flood
   static constexpr ms ARP_SENDING_FROZEN = 5 * 1000; 
