@@ -45,12 +45,14 @@ public:
   bool operator!=( const Address& other ) const { return not operator==( other ); }
 
   //! Hash funciton
- struct Hash {
-        std::size_t operator()(const Address &addr) const noexcept {
-            return std::hash<uint32_t>()(addr.ipv4_numeric());
-        }
+  struct Hash
+  {
+    std::size_t operator()( const Address& addr ) const noexcept
+    {
+      return std::hash<uint32_t>()( addr.ipv4_numeric() );
+    }
   };
-  
+
   //! \name Conversions
   //!@{
 
