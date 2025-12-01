@@ -85,39 +85,38 @@ private:
   std::queue<InternetDatagram> datagrams_received_ {};
 
   // Millisecond
-  using ms = size_t; 
+  using ms = size_t;
 
   // Time elapsed since the NetworkInterface was constructed
   ms since_constructed_ { 0 };
 
   // Cache mapping between ethernet and ip with ms time to be vanished
   struct MACEntry
-  {  
+  {
     EthernetAddress MAC;
     ms expired_at;
   };
-  static constexpr ms MAPPING_ALIVE = 30 * 1000; 
+  static constexpr ms MAPPING_ALIVE = 30 * 1000;
   std::unordered_map<Address, MACEntry, Address::Hash> cached_mapping_ {};
 
-  // Cache InternetDatagrams that are waiting for next hop's Ethernet address 
-  struct DgramEntry{
+  // Cache InternetDatagrams that are waiting for next hop's Ethernet address
+  struct DgramEntry
+  {
     InternetDatagram dgram;
     ms expired_at;
   };
   std::unordered_map<Address, std::vector<DgramEntry>, Address::Hash> datagrams_waiting_mapping_ {};
 
-
-  static constexpr ms ARP_SENDING_FROZEN = 5 * 1000; 
-  // Record arp sending avaiable time spot 
-  std::unordered_map<Address, ms, Address::Hash> arp_available_at_ {}; 
+  static constexpr ms ARP_SENDING_FROZEN = 5 * 1000;
+  // Record arp sending avaiable time spot
+  std::unordered_map<Address, ms, Address::Hash> arp_available_at_ {};
 
   // Helper for sending waiting InternetDatagram
   void send_waiting_dgrams( const Address& comming_ip );
 
   // Helper for sending ARP reply to target ip address
-  void send_arp_reply( const Address& target_ip, const EthernetAddress& target_ethernet);
+  void send_arp_reply( const Address& target_ip, const EthernetAddress& target_ethernet );
 
   // Expire any IP-to-Ethernet mappings that have expired
   void clean_expired_mapping( ms now );
-  
 };
