@@ -31,6 +31,24 @@ public:
   // Route packets between the interfaces
   void route();
 
+  // The routing table entry
+  struct RouteEntry
+  {
+    static constexpr uint8_t PREFIX_MAXLEN = 32;
+
+    std::optional<Address> next_hop; // 16B aligned
+    uint32_t route_prefix;
+    uint32_t prefix_mask;
+    size_t interface_num;
+
+    static uint32_t to_mask( uint8_t prefix_length )
+    {
+      if ( prefix_length > PREFIX_MAXLEN )
+        throw std::runtime_error( "prefix_length must be <= 32" );
+      return prefix_length == 0 ? 0 : ~( ( 1U << ( PREFIX_MAXLEN - prefix_length ) ) - 1U );
+    }
+  };
+
 private:
   // The router's collection of network interfaces
   std::vector<std::shared_ptr<NetworkInterface>> interfaces_ {};
