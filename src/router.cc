@@ -26,5 +26,60 @@ void Router::add_route( const uint32_t route_prefix,
 // Go through all the interfaces, and route every incoming datagram to its proper outgoing interface.
 void Router::route()
 {
-  debug( "unimplemented route() called" );
+  for ( auto it : interfaces_ ) {
+    do_interface_transfer( it );
+  }
+}
+
+// Go through routing_table_ to try to find a longest match.
+Router::RouteEntry* Router::find_longest_prefix_match( uint32_t destination )
+{
+  RouteEntry* best = nullptr;
+  for ( auto& entry : routing_table_ ) {
+    if ( ( destination & entry.prefix_mask ) == ( entry.route_prefix & entry.prefix_mask ) ) {
+      if ( !best || entry.prefix_mask > best->prefix_mask ) {
+        best = &entry;
+      }
+    }
+  }
+  return best;
+}
+
+// Parse a InternetDatagram.
+void Router::process_datagram( InternetDatagram& dgram_wrapper )
+{
+  if ( dgram_wrapper.header.ttl <= 1 ) {
+    return; // Dgram is out of date, wait drop.
+  }
+
+  Router::RouteEntry* entry = find_longest_prefix_match( dgram_wrapper.header.dst );
+
+  // No RouterEntry matched, early return to make InternetData wait simple drop.
+  if ( !entry ) {
+    return;
+  }
+
+  // Update header and re-serialize.
+  dgram_wrapper.header.ttl -= 1;
+  dgram_wrapper.header.compute_checksum();
+
+  // Transfer to relative interface to send.
+  if ( entry->next_hop == nullopt ) { // Direct
+    auto& iface = *interface( entry->interface_num );
+    iface.send_datagram( dgram_wrapper, Address::from_ipv4_numeric( dgram_wrapper.header.dst ) );
+  } else { // Transfer to next hop
+    auto& iface = *interface( entry->interface_num );
+    iface.send_datagram( dgram_wrapper, entry->next_hop.value() );
+  }
+}
+
+// Transfer all received data in a interface
+void Router::do_interface_transfer( shared_ptr<NetworkInterface> interface_wrapper )
+{
+  queue<InternetDatagram>& dgrams = interface_wrapper->datagrams_received();
+  while ( not dgrams.empty() ) {
+    process_datagram( dgrams.front() );
+    // Drop after processing.
+    dgrams.pop();
+  }
 }
