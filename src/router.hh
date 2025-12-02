@@ -52,4 +52,19 @@ public:
 private:
   // The router's collection of network interfaces
   std::vector<std::shared_ptr<NetworkInterface>> interfaces_ {};
+  // Routing table.
+  std::vector<RouteEntry> routing_table_ {};
+
+  // Helper function to try to find entry of matched longest prefix match
+  // \param[in] ip destination of IPDatagram in uint32_t style
+  // \returns the pointer to matched entry, if no matched result return nullptr
+  RouteEntry* find_longest_prefix_match( uint32_t destination );
+
+  // Helper function to tranfer all received data of a interface
+  // \param[in] pointer to a interface
+  void do_interface_transfer( std::shared_ptr<NetworkInterface> interface_wrapper );
+
+  // Helper function to process a InternetDatagram
+  // \param[in] referrence to a InternetDatagram
+  void process_datagram( InternetDatagram& dgram_wrapper );
 };
