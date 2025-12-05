@@ -116,6 +116,8 @@ private:
   {};
   static constexpr uninitialized_t uninitialized {};
 
+  /* Need a different constructor to indicate a `borrowed` status since default constructor
+     make it to be `owned`. Make obj_ keep std::nullopt via a tag class. */
   explicit Ref( uninitialized_t /*unused*/ ) {}
 };
 
