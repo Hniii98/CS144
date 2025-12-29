@@ -51,17 +51,17 @@ error_code不会改变程序的执行流，这点和exception不同。
 
 这个过程中当前栈的局部对象会被析构，直到匹配到了对应的`catch`捕获。（如果没有任何`catch`捕获的话，最外层，如main()会调用std::terminate终止程序。
 
-而这一行为带来的风险就是，如果你在某个栈中的某个变量持有了`动态`申请的资源，那么这个动态资源并不会正确被系统，可能会造成内存泄漏。因此，通常的解决方案是 ** 1. 采用基于栈分配的资源 2.栈无法实现就用只能指针包裹申请的资源，利用指针的RAII实现正确的析构。**
+而这一行为带来的风险就是，如果你在某个栈中的某个变量持有了`动态`申请的资源，那么这个动态资源并不会正确被析构，可能会造成内存泄漏。因此，通常的解决方案是 ` 1. 采用基于栈分配的资源 2.栈无法实现就用只能指针包裹申请的资源，利用指针的RAII实现正确的析构。`
 
 在exception的体系中，通常不需要引入额外的成员函数和变量。但在system_error中有点不同，system_error中封装了一个error_code。这里的设计哲学是希望提供一个支持错误码的异常。
 
-** tagged_error ** 这里的设计继承system_error，其实可以直接用system_error中封装的error_code来获取对应上文所讲的` _M_value`错误码。但是注意，system_error采用的设计是`私有封装+访问接口`的设计，如果这样做的话可能会不直观。
+**tagged_error** 这里的设计继承system_error，其实可以直接用system_error中封装的error_code来获取对应上文所讲的` _M_value`错误码。但是注意，system_error采用的设计是`私有封装+访问接口`的设计，如果这样做的话可能会不直观。
 
 同时，在类中加了一个`attempt_and_error_`，这样在实例化一个`tagged_error`对象的时候，`what()`不仅可以用到error_code对应的错误原因，还可以提供一个额外的上下文来指示异常发生的原因。
 
-这个用了两层封装`tagged_error` -> `unix_error`一开始我是觉得会不会多余？因为通常能是推荐用组合的方式来实现自己的异常类，只需要继承一个exception加入异常体系来支持多态的捕获，额外所需的信息用成员变量来支持。但是这里1. 异常都是和系统调用有关的，继承system_error有自解释的功能 2. DNS解析的错误码不和其他错误码兼容，如Unix，需要实现自己的`error_category`
+这个用了两层封装`tagged_error` -> `unix_error`一开始我是觉得会不会多余？因为通常能是推荐用组合的方式来实现自己的异常类，只需要继承一个exception加入异常体系来支持多态的捕获，额外所需的信息用成员变量来支持。但是这里`1. 异常都是和系统调用有关的，继承system_error有自解释的功能 2. DNS解析的错误码不和其他错误码兼容，如Unix，需要实现自己的error_category`
 
-在** unix_error **这里，错误码实现如下：
+在**unix_error**这里，错误码实现如下：
 ```
 /* The error code set by various library functions.  */
 extern int *__errno_location (void) __THROW __attribute_const__;
