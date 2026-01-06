@@ -37,10 +37,7 @@ void send_internet_datagram( const string& payload )
   sock.sendto( Address { "127.0.0.1" }, datagram ); //  no need port in ip datagram
 }
 
-// void send_user_datagram(const string& payload)
-// {
 
-// }
 
 void send_icmp_message( const string& payload )
 {
