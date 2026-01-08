@@ -90,6 +90,7 @@ void Reassembler::buffer_it( uint64_t index, std::string data )
     uint64_t end = start + it->second.size();
 
     if ( end < clip_left ) { // interval totally stay left, skip
+      ++it;
       continue;
     }
 
