@@ -2,7 +2,6 @@
 
 **Name:** Hniii98  
 **Time Spent:** ~24 hours  
-**Lab Attendance:** No  
 
 ---
 
@@ -55,7 +54,7 @@
 	- 每次重发都应该重新设置`alarm`的时刻
 
 5. **数据的接收**
-	- Sender回接受一个Receiver发送的数据包，包含确认号及`window_size`和`RST`标志
+	- Sender会接受一个Receiver发送的数据包，包含确认号及`window_size`和`RST`标志
 	- 清空缓存中所有被`完全确认`的数据包，一旦有数据包被确认，恢复`RTO`和 `retransmitted_times_`
 	- 同理，缓存不为空，重新设置`alarm`时刻。否则关闭timer
 
