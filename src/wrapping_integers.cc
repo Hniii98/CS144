@@ -13,7 +13,7 @@ uint64_t Wrap32::unwrap( Wrap32 zero_point, uint64_t checkpoint ) const
 {
   /*
    * raw_data_ =  zero_point + n mod 2^32 = zero_point + remainder
-   * remainer = raw_data - zero_point  n = remainder + k * 2^32
+   * Since: remainder = raw_data - zero_point, so  n = remainder + k * 2^32
    * Since we need to find the corresponding absolute sequnence number that is closest to checkponit,
    * so consider base of checkpoint as rough base. When the absolute sequence number is in the same base,
    * rough base is the real base. Otherwise check the nearby by shifting rough base.
