@@ -38,3 +38,38 @@ Writer和Reader的实现是通过 继承+显式 downcast 来实现对同一内�
   
 普通成员函数（不涉及到虚指针）并不会改变对象大小，byte_stream_helper.cc中也通过static_assert确保了这一点。
 
+## 测试
+对应的，在测试环节里，也应该通过proxychains代理链接，完整日志如下：
+```C++
+hniii98@ysyx:~/Project/CS144/CS144$ proxychains cmake --build build --target check_webget
+[proxychains] config file found: /etc/proxychains.conf
+[proxychains] preloading /usr/lib/x86_64-linux-gnu/libproxychains.so.4
+[proxychains] DLL init: proxychains-ng 4.17
+[proxychains] DLL init: proxychains-ng 4.17
+[proxychains] DLL init: proxychains-ng 4.17
+[proxychains] DLL init: proxychains-ng 4.17
+[proxychains] DLL init: proxychains-ng 4.17
+[proxychains] DLL init: proxychains-ng 4.17
+[proxychains] DLL init: proxychains-ng 4.17
+[proxychains] DLL init: proxychains-ng 4.17
+[proxychains] DLL init: proxychains-ng 4.17
+[proxychains] DLL init: proxychains-ng 4.17
+[proxychains] DLL init: proxychains-ng 4.17
+[proxychains] DLL init: proxychains-ng 4.17
+[proxychains] DLL init: proxychains-ng 4.17
+[proxychains] DLL init: proxychains-ng 4.17
+Test project /home/hniii98/Project/CS144/CS144/build
+    Start 1: compile with bug-checkers
+1/2 Test #1: compile with bug-checkers ........   Passed    6.78 sec
+    Start 2: t_webget
+2/2 Test #2: t_webget .........................   Passed    1.33 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =   8.13 sec
+[proxychains] DLL init: proxychains-ng 4.17
+[proxychains] DLL init: proxychains-ng 4.17
+Built target check_webget
+[proxychains] DLL init: proxychains-ng 4.17
+hniii98@ysyx:~/Project/CS144/CS144$ 
+```
