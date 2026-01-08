@@ -1,9 +1,8 @@
-Checkpoint 7 Writeup
-====================
+# Checkpoint 6 Writeup
 
-My name: Hniii98
+**Name:** Hniii98  
+**Time Spent:** ~1 hours  
 
-This checkpoint took me about 1 hours to do. 
 
 Solo portion:
 
