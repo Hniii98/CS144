@@ -2,7 +2,6 @@
 
 #include "byte_stream.hh"
 #include <map>
-#include <vector>
 
 class Reassembler
 {

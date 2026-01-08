@@ -1,5 +1,4 @@
 #include "reassembler.hh"
-#include "debug.hh"
 
 using namespace std;
 
@@ -14,6 +13,7 @@ void Reassembler::insert( uint64_t first_index, std::string data, bool is_last_s
     have_eof_ = true;
   }
 
+  // interval: [clip_left, clip_right)
   uint64_t clip_left = std::max( first_index, window_left );
   uint64_t clip_right = std::min( first_index + data.size(), window_right );
 
@@ -22,11 +22,12 @@ void Reassembler::insert( uint64_t first_index, std::string data, bool is_last_s
     uint64_t len = clip_right - clip_left;
     std::string slice = data.substr( pos, len );
 
-    if ( clip_left == window_left ) {
-      output_.writer().push( slice );
-      normalize_buffer(); // normalize buffer
-      drain();            // drain from buffer
-
+    // Next bytes in the stream
+    if ( clip_left == window_left ) { 
+      output_.writer().push( std::move(slice) );
+      normalize_buffer(); // normalize buffer to keep invariant
+      drain();            // drain from buffer if possible
+    // Earlier bytes remain unknown  
     } else {
       buffer_it( clip_left, std::move( slice ) );
     }
