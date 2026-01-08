@@ -63,10 +63,10 @@ private:
   std::map<uint64_t, std::string>
     internal_buffer_; // invariant: 1. no overlap 2. all index >= first_unassembled_index()
 
-  // Buffer data slice when it meet gap to be filled in
+  // Buffer data earlier bytes remain unknown
   void buffer_it( uint64_t index, std::string data );
-  // Push all data can be assembled in buffer after insert
+  // Drain all intervals that are next bytes in stream in buffer
   void drain();
-  // Hold invariant in internal_buffer_ after insert
+  // Erase out-of-date buffer after insert()
   void normalize_buffer();
 };

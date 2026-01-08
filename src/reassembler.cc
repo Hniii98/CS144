@@ -78,44 +78,43 @@ void Reassembler::buffer_it( uint64_t index, std::string data )
   if ( data.empty() )
     return;
 
-  uint64_t L = index;
-  uint64_t R = index + data.size();
+  uint64_t clip_left = index;
+  uint64_t clip_right = index + data.size();
 
-  // Make sure when it->first < L must handled (it's first index less than index, but it may reach to overlap data)
-  auto it = internal_buffer_.upper_bound( L );
-  if ( it != internal_buffer_.begin() )
+  auto it = internal_buffer_.upper_bound( clip_left );
+  if ( it != internal_buffer_.begin() ) // check interval before this
     --it;
 
   while ( it != internal_buffer_.end() ) {
-    uint64_t s = it->first;
-    uint64_t e = s + it->second.size();
+    uint64_t start = it->first;
+    uint64_t end = start + it->second.size();
 
-    if ( e < L ) { // Previous one are no overlap, skip. otherwise go to handle left and right slice
-      ++it;
+    if ( end < clip_left ) { // interval totally stay left, skip
       continue;
     }
 
-    if ( s > R ) { // all overlap handled over, break loop
+    if ( start > clip_right ) { // iteration finish, stop
       break;
     }
 
     // Every buffered interval, we consider it's front and tail.
     // So we don't have to clarify it to many situation.
+    // Merge all overlapped intervals in buffer by absorbing their prefix and suffix.
 
-    if ( s < L ) { // prefix
-      data = it->second.substr( 0, L - s ) + data;
-      L = s;
+    if ( start < clip_left ) { // prefix
+      data = it->second.substr( 0, clip_left - start ) + data;
+      clip_left = start;
     }
-    if ( e > R ) { // suffix
-      data += it->second.substr( R - s );
-      R = e;
+    if ( end > clip_right ) { // suffix
+      data += it->second.substr( clip_right - start );
+      clip_right = end;
     }
 
-    // remove old pair
+    // Remove original interval
     it = internal_buffer_.erase( it );
   }
 
-  internal_buffer_.emplace( L, std::move( data ) );
+  internal_buffer_.emplace( clip_left, std::move( data ) );
 }
 
 void Reassembler::normalize_buffer()
