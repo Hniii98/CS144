@@ -14,7 +14,9 @@
 `Address`的主要功能是封装多种协议簇，但是在CS144中，只用到IPv4、IPv6其实暂时没有涉及。
 
 - Address类封装一个一个Raw类的对象，而Raw类对象封装了一个通用容器`sockaddr_storage类型的 storage`，这个容器可以装下任意协议簇的地址值。同时，实现了在`Raw`类中实现了到`sockaddr`的类型转换。**这样就可以在接受`sockaddr *`类型作为参数的接口中直接传入`Address`类型的变量，实现隐式转换**
+  
 - Address->Raw 这一层是属于成员变量读取，然后Raw中实现了类型转换符，这样只有一层的隐式转换，符合标准中**只允许一次隐式的用户自定义转换。
+
 - `Address::Address( const string& ip, const uint16_t port )`和 `Address::Address( const string& hostname, const string& service )`都利用了委托构造函数的方式调用了`Address::Address( const string& node, const string& service, const addrinfo& hints )`这个构造函数
 
 - `Address::Address( const string& node, const string& service, const addrinfo& hints )`这一个构造函数的逻辑中，最终目的是调用`Address::Address(const sockaddr *addr, size_t size)`这一个构造函数，然后通过一次的拷贝赋值`*this = Address()`实现对成员变量的赋值
@@ -68,3 +70,6 @@ extern int *__errno_location (void) __THROW __attribute_const__;
 # define errno (*__errno_location ())
 ```
 它会指向当前线程最后一个系统调用所产生的错误码，提供了一个线程安全的错误码获取接口。unix_error用这个错误码最为默认参数进行构，同时加上一个用户提供的上下文`s_attempt`,和全局的单例`std::system_category()`这个单例提供了系统调用错误码到字符串转换的接口，无需关心是什么操作系统。
+
+## 
+
